@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Лингвистическая лаборатория</title>
+
+<style>
+  :root{
+    --bg:#07121d;
+    --bg2:#0b1d2b;
+    --panel:#0d2433;
+    --panel2:#102d3d;
+    --line:#2d5364;
+    --text:#eef9fb;
+    --muted:#a9c5cf;
+    --cyan:#55d6e8;
+    --cyan2:#a8f3f8;
+    --green:#7ee787;
+    --amber:#ffd166;
+    --red:#ff8b7b;
+    --ink:#061017;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+    background:
+      radial-gradient(circle at 20% 0%, rgba(85,214,232,.10), transparent 34rem),
+      linear-gradient(180deg,#06111b,#0a1925 52%,#06111b);
+    color:var(--text);
+  }
+  body::before{
+    content:"";
+    position:fixed; inset:0; pointer-events:none; opacity:.18;
+    background-image:linear-gradient(rgba(85,214,232,.08) 1px,transparent 1px),
+                     linear-gradient(90deg,rgba(85,214,232,.08) 1px,transparent 1px);
+    background-size:32px 32px;
+  }
+  .app{
+    position:relative;
+    max-width:1180px;
+    margin:0 auto;
+    min-height:100vh;
+    background:linear-gradient(180deg,rgba(8,25,37,.96),rgba(5,16,25,.98));
+    border-left:1px solid rgba(85,214,232,.16);
+    border-right:1px solid rgba(85,214,232,.16);
+  }
+  header{
+    position:relative;
+    overflow:hidden;
+    background:linear-gradient(110deg,#0a2232,#07151f 70%);
+    color:var(--text);
+    padding:24px 26px 22px;
+    border-bottom:1px solid var(--line);
+  }
+  header::after{
+    content:"SYSTEM // LANGUAGE LAB";
+    position:absolute; right:24px; top:20px;
+    color:rgba(168,243,248,.35);
+    font:700 12px ui-monospace,SFMono-Regular,Consolas,monospace;
+    letter-spacing:.16em;
+  }
+  header h1{
+    margin:0 0 7px;
+    font-size:clamp(28px,4vw,46px);
+    letter-spacing:-.03em;
+  }
+  header p{margin:0;color:var(--muted);font-size:16px}
+  .progress{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:10px;
+    padding:14px 20px;
+    background:rgba(5,16,25,.94);
+    border-bottom:1px solid var(--line);
+    position:sticky; top:0; z-index:5;
+    backdrop-filter:blur(10px);
+  }
+  .step{
+    position:relative;
+    border:1px solid var(--line);
+    border-radius:10px;
+    text-align:center;
+    padding:10px 8px;
+    min-height:46px;
+    font-weight:800;
+    background:#0b202e;
+    color:var(--muted);
+    font-size:14px;
+    cursor:pointer;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.02);
+  }
+  .step::before{
+    content:"";
+    display:inline-block;
+    width:7px;height:7px;border-radius:50%;
+    background:#617985;
+    margin-right:7px;
+    box-shadow:0 0 0 3px rgba(97,121,133,.12);
+  }
+  .step.active{
+    border-color:var(--cyan);
+    background:linear-gradient(180deg,#103244,#0c2838);
+    color:var(--text);
+    box-shadow:0 0 22px rgba(85,214,232,.12), inset 0 0 0 1px rgba(85,214,232,.12);
+  }
+  .step.active::before{background:var(--cyan);box-shadow:0 0 12px var(--cyan)}
+  .step.done{border-color:#397c59;color:#d9ffe3;background:#0d2a25}
+  .step.done::before{background:var(--green);box-shadow:0 0 10px rgba(126,231,135,.8)}
+  main{padding:26px}
+  .screen{display:none}
+  .screen.active{display:block;animation:screenIn .28s ease-out}
+  @keyframes screenIn{from{opacity:.35;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .panel{
+    position:relative;
+    background:
+      linear-gradient(180deg,rgba(16,45,61,.96),rgba(8,28,40,.98));
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:26px;
+    box-shadow:0 20px 55px rgba(0,0,0,.24), inset 0 1px rgba(255,255,255,.03);
+    overflow:hidden;
+  }
+  .panel::before{
+    content:"";
+    position:absolute;left:0;top:0;bottom:0;width:4px;
+    background:linear-gradient(var(--cyan),transparent 70%);
+    opacity:.8;
+  }
+  h2{margin:0 0 12px;font-size:clamp(26px,3vw,38px);letter-spacing:-.025em}
+  h2::before{content:"◈";color:var(--cyan);font-size:.72em;margin-right:10px}
+  .lead{font-size:18px;line-height:1.55;color:#dcecf1;max-width:900px}
+  .status{
+    position:relative;
+    margin:18px 0 0;
+    padding:14px 16px 14px 44px;
+    border-radius:10px;
+    background:#091c28;
+    border:1px solid #315364;
+    color:#c9dce3;
+    min-height:50px;
+    font-family:ui-monospace,SFMono-Regular,Consolas,monospace;
+  }
+  .status::before{
+    content:"●";position:absolute;left:17px;top:13px;color:var(--amber);
+    text-shadow:0 0 8px rgba(255,209,102,.65);
+  }
+  .status.good{background:#0d2924;border-color:#3c8159;color:#d9ffe3}
+  .status.good::before{content:"✓";color:var(--green)}
+  .status.bad{background:#321b1a;border-color:#8b4d43;color:#ffe0db}
+  .status.bad::before{content:"!";color:var(--red)}
+  button{
+    border:1px solid transparent;
+    border-radius:10px;
+    padding:12px 18px;
+    min-height:46px;
+    font-size:16px;
+    font-weight:800;
+    cursor:pointer;
+    transition:transform .14s ease,box-shadow .14s ease,border-color .14s ease;
+  }
+  button.primary{
+    background:linear-gradient(180deg,#6be2ef,#36b9cc);
+    color:#06151d;
+    border-color:#91edf5;
+    box-shadow:0 8px 24px rgba(54,185,204,.16);
+  }
+  button.secondary{background:#102938;color:#d9edf2;border-color:#3b5967}
+  button:disabled{opacity:.55;cursor:not-allowed}
+  @media (hover:hover) and (pointer:fine){
+    button:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(85,214,232,.14)}
+  }
+  .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+  .lab-grid{display:grid;grid-template-columns:1fr;gap:16px}
+  .word-bank{
+    display:flex;flex-wrap:wrap;gap:10px;padding:16px;
+    background:#081a26;border:1px solid #294b5a;border-radius:14px;min-height:82px;
+  }
+  .word{
+    padding:10px 14px;border:1px solid #4f7483;background:#102b3a;color:#eefcff;
+    border-radius:9px;cursor:grab;font-weight:800;user-select:none;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.025);
+  }
+  .word.selected{outline:3px solid rgba(85,214,232,.25);border-color:var(--cyan);background:#153849}
+  .bins{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}
+  .bin{
+    min-height:190px;border:1px dashed #52717f;border-radius:14px;padding:14px;
+    background:linear-gradient(180deg,#0a1e2b,#081925);
+  }
+  .bin h3{
+    margin:0 0 12px;font-size:17px;color:var(--cyan2);text-transform:uppercase;
+    letter-spacing:.06em;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;
+  }
+  .bin .dropzone{display:flex;flex-wrap:wrap;gap:8px;min-height:120px}
+  .hint{color:#86a6b2;font-size:14px}
+  .repair-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .repair{
+    border:1px solid #315364;border-radius:13px;padding:15px;
+    background:linear-gradient(180deg,#0d2838,#0a202e);
+  }
+  .repair label{font-weight:800;display:block;margin-bottom:9px;color:#eaf8fb}
+  .repair select,.scan-row select,.final-slot select{
+    width:100%;min-height:46px;font-size:16px;padding:8px 10px;
+    border:1px solid #4c6d7b;border-radius:9px;background:#071923;color:#eef9fb;
+  }
+  .scan-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+  .scan-row{
+    display:grid;grid-template-columns:1fr 180px;gap:12px;align-items:center;
+    border:1px solid #315364;border-radius:13px;padding:14px;background:#0a202e;
+  }
+  .scan-row strong{font-size:19px}
+  .capsules{display:flex;flex-wrap:wrap;gap:14px;margin:22px 0}
+  .capsule{
+    position:relative;border:1px solid #6ccbd7;border-radius:999px;padding:13px 22px 13px 45px;
+    background:linear-gradient(90deg,#0b2936,#123c48,#0b2936);color:#eaffff;
+    font-weight:900;min-width:180px;text-align:center;box-shadow:0 0 24px rgba(85,214,232,.10);
+  }
+  .capsule::before{
+    content:"";position:absolute;left:15px;top:50%;transform:translateY(-50%);
+    width:17px;height:17px;border-radius:50%;background:var(--cyan);
+    box-shadow:0 0 13px rgba(85,214,232,.85);
+  }
+  .final-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .final-slot{
+    position:relative;border:1px solid #456979;border-radius:14px;padding:16px;min-height:145px;
+    background:radial-gradient(circle at 50% 0%,rgba(85,214,232,.08),transparent 60%),#081c28;
+  }
+  .final-slot h3{margin:0 0 18px;color:var(--cyan2)}
+  .final-slot::after{
+    content:"CAPSULE PORT";display:block;margin-top:12px;color:#688a97;font:700 11px ui-monospace,monospace;letter-spacing:.12em
+  }
+  .exit{
+    text-align:center;padding:30px 20px;border-radius:16px;
+    background:radial-gradient(circle at 50% 20%,rgba(126,231,135,.16),transparent 45%),#0b2a25;
+    border:1px solid #4c9368;
+  }
+  .exit .door{
+    display:inline-grid;place-items:center;width:110px;height:110px;border-radius:22px;
+    font-size:62px;line-height:1;background:#0d352d;border:1px solid #65a979;
+    box-shadow:0 0 40px rgba(126,231,135,.15);
+  }
+  #start .panel{
+    min-height:390px;display:flex;flex-direction:column;justify-content:center;
+    background:
+      radial-gradient(circle at 78% 50%,rgba(85,214,232,.13),transparent 18rem),
+      linear-gradient(120deg,#102f40,#081b28 72%);
+  }
+  #start .panel::after{
+    content:"03 MODULES OFFLINE";
+    position:absolute;right:28px;bottom:24px;color:rgba(168,243,248,.25);
+    font:800 13px ui-monospace,monospace;letter-spacing:.12em;
+  }
+  @media (max-width:800px){
+    .bins,.final-grid,.repair-list,.scan-list{grid-template-columns:1fr}
+    .scan-row{grid-template-columns:1fr}
+    .progress{grid-template-columns:repeat(2,1fr);position:static}
+    main{padding:16px}
+    .panel{padding:20px}
+    header::after{display:none}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{scroll-behavior:auto!important;animation:none!important;transition:none!important}
+  }
+</style>
+
+
+<style id="scene-design">
+.lab-scene{
+  margin-bottom:22px;border:1px solid #315667;border-radius:20px;overflow:hidden;
+  background:linear-gradient(180deg,#0b2534 0%,#071823 100%);
+  box-shadow:0 22px 55px rgba(0,0,0,.28);
+}
+.scene-top{display:flex;justify-content:space-between;gap:18px;align-items:center;padding:16px 20px;border-bottom:1px solid #294c5c;background:#0a202e}
+.scene-kicker{font:800 11px ui-monospace,monospace;letter-spacing:.14em;color:#67cbd8}
+.scene-title{font-size:20px;font-weight:850;margin-top:3px}
+.power-readout{text-align:right;font-family:ui-monospace,monospace}.power-readout span{display:block;font-size:26px;font-weight:900;color:#55d6e8}.power-readout small{color:#7899a5;font-size:10px;letter-spacing:.1em}
+.scene-space{position:relative;min-height:355px;overflow:hidden;background:
+ radial-gradient(circle at 50% 50%,rgba(85,214,232,.09),transparent 25%),
+ linear-gradient(rgba(85,214,232,.035) 1px,transparent 1px),
+ linear-gradient(90deg,rgba(85,214,232,.035) 1px,transparent 1px),#071722;background-size:auto,28px 28px,28px 28px}
+.scene-space::before{content:"";position:absolute;left:0;right:0;bottom:0;height:82px;background:linear-gradient(180deg,transparent,rgba(1,8,13,.7))}
+.scene-wires{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}.wire{fill:none;stroke:#315667;stroke-width:4;stroke-dasharray:8 8}
+.machine,.exit-console{position:absolute;z-index:2;width:190px;min-height:116px;padding:15px 12px 12px;border:1px solid #3b6474;border-radius:14px;background:linear-gradient(180deg,#102e3e,#0a202d);color:#dceff4;box-shadow:0 14px 28px rgba(0,0,0,.24);text-align:left}
+.machine-sort{left:4%;top:48px}.machine-synth{left:4%;bottom:35px}.machine-scan{right:4%;top:48px}.exit-console{right:5%;bottom:38px;width:150px;min-height:96px}
+.machine strong,.exit-console strong{display:block;font-size:12px;letter-spacing:.04em;margin-top:7px}.machine small,.exit-console small{display:block;color:#72929e;font:700 10px ui-monospace,monospace;margin-top:3px}
+.machine-light{position:absolute;right:12px;top:12px;width:9px;height:9px;border-radius:50%;background:#ff8b7b;box-shadow:0 0 10px rgba(255,139,123,.75)}
+.machine-icon{display:grid;place-items:center;width:42px;height:42px;border:1px solid #3d6574;border-radius:9px;background:#081b27}
+.machine-icon svg{width:27px;height:27px;fill:#173c4a;stroke:#69d7e4;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.machine.restored{border-color:#4b9467;background:linear-gradient(180deg,#113b32,#0a2824)}.machine.restored .machine-light{background:#7ee787;box-shadow:0 0 13px #7ee787}.machine.restored .machine-icon{border-color:#4b9467}.machine.restored .machine-icon svg{stroke:#7ee787}
+.machine.active-machine{outline:2px solid rgba(85,214,232,.35);box-shadow:0 0 28px rgba(85,214,232,.14)}
+.core{position:absolute;z-index:1;left:50%;top:50%;width:150px;height:150px;transform:translate(-50%,-50%);display:grid;place-items:center}
+.core-ring{position:absolute;inset:0;border:2px solid #244e60;border-radius:50%;box-shadow:inset 0 0 25px rgba(85,214,232,.08)}
+.core-ring::before,.core-ring::after{content:"";position:absolute;background:#55d6e8;opacity:.55}.core-ring::before{width:2px;height:18px;left:50%;top:-9px}.core-ring::after{height:2px;width:18px;top:50%;right:-9px}
+.ring2{inset:18px;border-style:dashed;opacity:.65}
+.core-center{width:78px;height:78px;border-radius:50%;display:grid;place-items:center;align-content:center;background:#0a2634;border:1px solid #3c6c7e;box-shadow:0 0 30px rgba(85,214,232,.08);font-family:ui-monospace,monospace}
+.core-center span{font-size:22px;font-weight:900;color:#55d6e8}.core-center small{font-size:9px;color:#7899a5}
+.lab-scene.power-1 .core-ring{border-color:#397c59}.lab-scene.power-2 .core{filter:drop-shadow(0 0 10px rgba(126,231,135,.15))}.lab-scene.power-3 .core-ring{border-color:#7ee787;box-shadow:0 0 28px rgba(126,231,135,.2)}
+.exit-console.ready{border-color:#7ee787;box-shadow:0 0 24px rgba(126,231,135,.16)}.exit-bars{display:block;width:100%;height:28px;border:1px solid #385d6d;border-radius:6px;background:repeating-linear-gradient(90deg,#173b49 0 6px,#081a25 6px 12px)}
+.inventory{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:13px 18px;background:#081b27;border-top:1px solid #294c5c}.inventory-label{font:800 11px ui-monospace,monospace;letter-spacing:.12em;color:#87a7b2}.inventory-slots{display:flex;gap:10px}.inv-slot{width:78px;height:34px;border:1px solid #355a69;border-radius:999px;display:flex;align-items:center;justify-content:space-between;padding:5px 8px;background:#06151e}.inv-slot span{width:35px;height:16px;border-radius:999px;background:#17313c;border:1px solid #294d5b}.inv-slot small{font:800 9px ui-monospace,monospace;color:#617f8a}.inv-slot.filled{border-color:#65cbd7}.inv-slot.filled span{background:linear-gradient(90deg,#1a5360,#55d6e8,#1a5360);box-shadow:0 0 12px rgba(85,214,232,.45)}
+@media(max-width:820px){.scene-space{min-height:520px}.machine{width:43%}.machine-sort{left:4%;top:35px}.machine-scan{right:4%;top:35px}.machine-synth{left:4%;bottom:35px}.exit-console{right:4%;bottom:40px}.core{top:50%;width:125px;height:125px}.inventory{align-items:flex-start;flex-direction:column}}
+@media(max-width:520px){.scene-space{min-height:650px}.machine,.exit-console{width:88%;left:6%;right:auto}.machine-sort{top:24px}.machine-scan{top:164px}.machine-synth{top:304px;bottom:auto}.exit-console{top:444px;bottom:auto}.core{top:575px}.inventory-slots{width:100%}.inv-slot{flex:1}.scene-top{align-items:flex-start}.scene-title{font-size:17px}}
+</style>
+
+</head>
+<body>
+<div class="app">
+<header>
+  <h1>Лингвистическая лаборатория</h1>
+  <p>Аварийный протокол: восстановите три модуля и разблокируйте выход.</p>
+</header>
+
+<div class="progress" aria-label="Навигация по этапам">
+  <button type="button" class="step active" data-step="1" data-target="module1">1. Сортировка</button>
+  <button type="button" class="step" data-step="2" data-target="module2">2. Синтезатор</button>
+  <button type="button" class="step" data-step="3" data-target="module3">3. Сканер</button>
+  <button type="button" class="step" data-step="4" data-target="final">4. Терминал</button>
+</div>
+
+<main>
+
+<section class="lab-scene" aria-label="Схема аварийной лаборатории">
+  <div class="scene-top">
+    <div>
+      <div class="scene-kicker">СЕКТОР L-5 · АВАРИЙНЫЙ РЕЖИМ</div>
+      <div class="scene-title">Центральный зал лаборатории</div>
+    </div>
+    <div class="power-readout"><span id="powerValue">0%</span><small>ВОССТАНОВЛЕНИЕ</small></div>
+  </div>
+
+  <div class="scene-space">
+    <svg class="scene-wires" viewBox="0 0 1000 330" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M170 150 C280 150 300 70 430 70 S650 70 720 150" class="wire"/>
+      <path d="M170 150 C300 150 300 255 430 255 S650 255 720 150" class="wire"/>
+      <path d="M720 150 C820 150 820 150 900 150" class="wire"/>
+    </svg>
+
+    <button type="button" class="machine machine-sort" data-scene-target="module1" data-scene-step="1">
+      <span class="machine-light"></span>
+      <span class="machine-icon" aria-hidden="true">
+        <svg viewBox="0 0 64 64"><path d="M10 12h44v10H10zM14 29h14v22H14zM36 29h14v22H36z"/><path d="M21 22v7m22-7v7" fill="none"/></svg>
+      </span>
+      <strong>СОРТИРОВОЧНАЯ КАМЕРА</strong>
+      <small>МОДУЛЬ 01</small>
+    </button>
+
+    <button type="button" class="machine machine-synth" data-scene-target="module2" data-scene-step="2">
+      <span class="machine-light"></span>
+      <span class="machine-icon" aria-hidden="true">
+        <svg viewBox="0 0 64 64"><path d="M12 13h40v38H12z" fill="none"/><path d="M19 22h26M19 31h17M19 40h22" fill="none"/><circle cx="46" cy="40" r="4"/></svg>
+      </span>
+      <strong>СИНТЕЗАТОР ФРАЗ</strong>
+      <small>МОДУЛЬ 02</small>
+    </button>
+
+    <button type="button" class="machine machine-scan" data-scene-target="module3" data-scene-step="3">
+      <span class="machine-light"></span>
+      <span class="machine-icon" aria-hidden="true">
+        <svg viewBox="0 0 64 64"><circle cx="29" cy="29" r="16" fill="none"/><path d="M40 40l13 13M21 29h16M29 21v16" fill="none"/></svg>
+      </span>
+      <strong>ДИАГНОСТИЧЕСКИЙ СКАНЕР</strong>
+      <small>МОДУЛЬ 03</small>
+    </button>
+
+    <button type="button" class="exit-console" data-scene-target="final" data-scene-step="4">
+      <span class="exit-bars"></span>
+      <strong>ШЛЮЗ</strong>
+      <small>ТЕРМИНАЛ</small>
+    </button>
+
+    <div class="core" aria-label="Центральное ядро">
+      <div class="core-ring"></div><div class="core-ring ring2"></div>
+      <div class="core-center"><span id="coreCount">0/3</span><small>МОДУЛЯ</small></div>
+    </div>
+  </div>
+
+  <div class="inventory" aria-label="Контейнер кодовых капсул">
+    <span class="inventory-label">КОНТЕЙНЕР КАПСУЛ</span>
+    <div class="inventory-slots">
+      <div class="inv-slot" data-cap="1"><span></span><small>01</small></div>
+      <div class="inv-slot" data-cap="2"><span></span><small>02</small></div>
+      <div class="inv-slot" data-cap="3"><span></span><small>03</small></div>
+    </div>
+  </div>
+</section>
+
+<section class="screen active" id="start">
+  <div class="panel">
+    <h2>Системный сбой</h2>
+    <p class="lead">В лаборатории перепутаны языковые данные. Выход заблокирован. Чтобы восстановить систему, классу нужно последовательно починить три модуля. За каждый исправленный модуль вы получите кодовую капсулу. Все три понадобятся в финале.</p>
+    <div class="status">Готовность лаборатории: 0 из 3 модулей восстановлено.</div>
+    <div class="actions">
+      <button class="primary" id="startBtn">Запустить аварийный протокол</button>
+    </div>
+  </div>
+</section>
+
+<section class="screen" id="module1">
+  <div class="panel">
+    <h2>Модуль 1. Сортировочная камера</h2>
+    <p class="lead">Распределите существительные по трём секторам: мужской, женский и средний род. Можно перетаскивать карточки или выбрать карточку, а затем нажать на нужный сектор.</p>
+
+    <div class="word-bank" id="wordBank" aria-label="Карточки слов"></div>
+
+    <div class="bins">
+      <div class="bin" data-gender="m" tabindex="0">
+        <h3>Мужской род</h3>
+        <div class="dropzone" id="bin-m"></div>
+      </div>
+      <div class="bin" data-gender="f" tabindex="0">
+        <h3>Женский род</h3>
+        <div class="dropzone" id="bin-f"></div>
+      </div>
+      <div class="bin" data-gender="n" tabindex="0">
+        <h3>Средний род</h3>
+        <div class="dropzone" id="bin-n"></div>
+      </div>
+    </div>
+
+        <div class="status" id="status1" aria-live="polite">Система ждёт распределения всех карточек.</div>
+    <div class="actions">
+      <button class="primary" id="check1">Проверить модуль</button>
+      <button class="secondary" id="reset1">Вернуть карточки</button>
+    </div>
+  </div>
+</section>
+
+<section class="screen" id="capsule1">
+  <div class="panel">
+    <h2>Модуль восстановлен</h2>
+    <p class="lead">Сортировочная камера работает. Получена первая кодовая капсула.</p>
+    <div class="capsules"><div class="capsule">Капсула: «путь»</div></div>
+    <div class="actions"><button class="primary" id="to2">Перейти к синтезатору</button></div>
+  </div>
+</section>
+
+<section class="screen" id="module2">
+  <div class="panel">
+    <h2>Модуль 2. Синтезатор фраз</h2>
+    <p class="lead">Синтезатор потерял окончания глаголов. Выберите форму прошедшего времени, которая согласуется с существительным.</p>
+    <div class="repair-list" id="repairList"></div>
+        <div class="status" id="status2" aria-live="polite">Восстановите все строки синтезатора.</div>
+    <div class="actions">
+      <button class="primary" id="check2">Проверить модуль</button>
+      <button class="secondary" id="reset2">Сбросить выбор</button>
+    </div>
+  </div>
+</section>
+
+<section class="screen" id="capsule2">
+  <div class="panel">
+    <h2>Модуль восстановлен</h2>
+    <p class="lead">Синтезатор снова согласует слова правильно. Получена вторая кодовая капсула.</p>
+    <div class="capsules">
+      <div class="capsule">Капсула: «путь»</div>
+      <div class="capsule">Капсула: «мышь»</div>
+    </div>
+    <div class="actions"><button class="primary" id="to3">Перейти к диагностике</button></div>
+  </div>
+</section>
+
+<section class="screen" id="module3">
+  <div class="panel">
+    <h2>Модуль 3. Диагностический сканер</h2>
+    <p class="lead">Сканер выдал результаты анализа, но часть настроек повреждена. Для каждой строки установите правильный род существительного. Система проверит весь модуль сразу и не укажет место ошибки.</p>
+    <div class="scan-list" id="scanList"></div>
+    <div class="status" id="status3" aria-live="polite">Исправьте результаты диагностики.</div>
+    <div class="actions">
+      <button class="primary" id="check3">Проверить модуль</button>
+      <button class="secondary" id="reset3">Вернуть исходные показания</button>
+    </div>
+  </div>
+</section>
+
+<section class="screen" id="capsule3">
+  <div class="panel">
+    <h2>Все модули восстановлены</h2>
+    <p class="lead">Диагностический сканер исправлен. Получена третья кодовая капсула. Аварийный терминал готов принять все три.</p>
+    <div class="capsules">
+      <div class="capsule">Капсула: «путь»</div>
+      <div class="capsule">Капсула: «мышь»</div>
+      <div class="capsule">Капсула: «повидло»</div>
+    </div>
+    <div class="actions"><button class="primary" id="toFinal">Открыть аварийный терминал</button></div>
+  </div>
+</section>
+
+<section class="screen" id="final">
+  <div class="panel">
+    <h2>Аварийный терминал</h2>
+    <p class="lead">Распределите три кодовые капсулы по секторам рода. Только правильная конфигурация разблокирует дверь.</p>
+
+    <div class="final-grid">
+      <div class="final-slot">
+        <h3>Мужской род</h3>
+        <select id="final-m" aria-label="Капсула для мужского рода">
+          <option value="">Выберите капсулу</option>
+          <option value="путь">путь</option>
+          <option value="мышь">мышь</option>
+          <option value="повидло">повидло</option>
+        </select>
+      </div>
+      <div class="final-slot">
+        <h3>Женский род</h3>
+        <select id="final-f" aria-label="Капсула для женского рода">
+          <option value="">Выберите капсулу</option>
+          <option value="путь">путь</option>
+          <option value="мышь">мышь</option>
+          <option value="повидло">повидло</option>
+        </select>
+      </div>
+      <div class="final-slot">
+        <h3>Средний род</h3>
+        <select id="final-n" aria-label="Капсула для среднего рода">
+          <option value="">Выберите капсулу</option>
+          <option value="путь">путь</option>
+          <option value="мышь">мышь</option>
+          <option value="повидло">повидло</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="status" id="statusFinal" aria-live="polite">Терминал ждёт конфигурацию из трёх капсул.</div>
+    <div class="actions">
+      <button class="primary" id="unlock">Разблокировать выход</button>
+      <button class="secondary" id="resetFinal">Сбросить конфигурацию</button>
+    </div>
+  </div>
+</section>
+
+<section class="screen" id="success">
+  <div class="panel">
+    <div class="exit">
+      <div class="door" aria-hidden="true">🚪</div>
+      <h2>Выход разблокирован</h2>
+      <p class="lead">Лингвистическая лаборатория восстановлена. Все три кодовые капсулы установлены правильно.</p>
+      <div class="actions" style="justify-content:center">
+        <button class="primary" id="restart">Запустить квест заново</button>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+</div>
+
+<script>
+(() => {
+  const screens = [...document.querySelectorAll('.screen')];
+  const steps = [...document.querySelectorAll('.step')];
+
+  const completedModules = new Set();
+
+  function updateLabScene(activeStep) {
+    const scene = document.querySelector('.lab-scene');
+    if (!scene) return;
+    const count = completedModules.size;
+    scene.classList.remove('power-1','power-2','power-3');
+    if (count) scene.classList.add('power-' + count);
+    const power = [0,34,67,100][count] || 0;
+    const powerEl = document.getElementById('powerValue');
+    const countEl = document.getElementById('coreCount');
+    if (powerEl) powerEl.textContent = power + '%';
+    if (countEl) countEl.textContent = count + '/3';
+
+    document.querySelectorAll('.machine').forEach((el, i) => {
+      el.classList.toggle('restored', completedModules.has(i + 1));
+      el.classList.toggle('active-machine', activeStep === i + 1);
+    });
+    document.querySelectorAll('.inv-slot').forEach((el, i) => {
+      el.classList.toggle('filled', completedModules.has(i + 1));
+    });
+    const exit = document.querySelector('.exit-console');
+    if (exit) exit.classList.toggle('ready', count === 3);
+  }
+
+  document.querySelectorAll('[data-scene-target]').forEach(control => {
+    control.addEventListener('click', () => {
+      show(control.dataset.sceneTarget, Number(control.dataset.sceneStep));
+    });
+  });
+
+  function show(id, stepNum) {
+    screens.forEach(s => s.classList.toggle('active', s.id === id));
+    if (stepNum) {
+      steps.forEach((el, i) => {
+        const n = i + 1;
+        el.classList.toggle('active', n === stepNum);
+        el.classList.toggle('done', completedModules.has(n));
+      });
+    }
+    updateLabScene(stepNum);
+    window.scrollTo({top: 0, behavior: 'smooth'});
+  }
+
+  steps.forEach(step => {
+    step.addEventListener('click', () => {
+      const target = step.dataset.target;
+      const stepNum = Number(step.dataset.step);
+      if (target) show(target, stepNum);
+    });
+  });
+
+  document.getElementById('startBtn').addEventListener('click', () => show('module1', 1));
+
+  const words = [
+    {w:'картофель', g:'m'},
+    {w:'путь', g:'m'},
+    {w:'рояль', g:'m'},
+    {w:'молодёжь', g:'f'},
+    {w:'мышь', g:'f'},
+    {w:'простыня', g:'f'},
+    {w:'фамилия', g:'f'},
+    {w:'впечатление', g:'n'},
+    {w:'повидло', g:'n'},
+    {w:'полотенце', g:'n'},
+    {w:'яблоко', g:'n'},
+    {w:'училище', g:'n'}
+  ];
+
+  const bank = document.getElementById('wordBank');
+  let selectedWord = null;
+
+  function buildWords() {
+    bank.innerHTML = '';
+    ['m','f','n'].forEach(g => document.getElementById('bin-' + g).innerHTML = '');
+    selectedWord = null;
+    words.forEach((item, idx) => {
+      const el = document.createElement('button');
+      el.type = 'button';
+      el.className = 'word';
+      el.textContent = item.w;
+      el.dataset.gender = item.g;
+      el.dataset.id = String(idx);
+      el.draggable = true;
+      el.addEventListener('dragstart', e => {
+        e.dataTransfer.setData('text/plain', el.dataset.id);
+      });
+      el.addEventListener('click', () => {
+        document.querySelectorAll('.word').forEach(x => x.classList.remove('selected'));
+        selectedWord = el;
+        el.classList.add('selected');
+      });
+      bank.appendChild(el);
+    });
+    document.getElementById('status1').className='status';
+    document.getElementById('status1').textContent='Система ждёт распределения всех карточек.';
+  }
+
+  function placeWord(el, gender) {
+    document.getElementById('bin-' + gender).appendChild(el);
+    el.dataset.placed = gender;
+    el.classList.remove('selected');
+    selectedWord = null;
+  }
+
+  document.querySelectorAll('.bin').forEach(bin => {
+    bin.addEventListener('dragover', e => e.preventDefault());
+    bin.addEventListener('drop', e => {
+      e.preventDefault();
+      const id = e.dataTransfer.getData('text/plain');
+      const el = document.querySelector('.word[data-id="' + id + '"]');
+      if (el) placeWord(el, bin.dataset.gender);
+    });
+    bin.addEventListener('click', e => {
+      if (e.target.closest('.word')) return;
+      if (selectedWord) placeWord(selectedWord, bin.dataset.gender);
+    });
+  });
+
+  document.getElementById('check1').addEventListener('click', () => {
+    const all = [...document.querySelectorAll('.word')];
+    const placed = all.every(el => el.dataset.placed);
+    const ok = placed && all.every(el => el.dataset.placed === el.dataset.gender);
+    const st = document.getElementById('status1');
+    if (!placed) {
+      st.className='status bad';
+      st.textContent='Не все карточки распределены. Система не может запустить проверку.';
+      return;
+    }
+    if (!ok) {
+      st.className='status bad';
+      st.textContent='Модуль всё ещё неисправен. В распределении есть ошибка. Найдите её и попробуйте снова.';
+      return;
+    }
+    st.className='status good';
+    st.textContent='Сортировочная камера восстановлена.';
+    completedModules.add(1);
+    updateLabScene(1);
+    setTimeout(() => show('capsule1', 2), 450);
+  });
+  document.getElementById('reset1').addEventListener('click', buildWords);
+
+  const repairs = [
+    {label:'Молодёжь (петь)', options:['пел','пела','пело'], answer:'пела'},
+    {label:'Картофель (зазеленеть)', options:['зазеленел','зазеленела','зазеленело'], answer:'зазеленел'},
+    {label:'Солнце (садиться)', options:['садился','садилась','садилось'], answer:'садилось'},
+    {label:'Яблоко (зреть)', options:['зрел','зрела','зрело'], answer:'зрело'},
+    {label:'Полотенце (висеть)', options:['висел','висела','висело'], answer:'висело'},
+    {label:'Рояль (стоять)', options:['стоял','стояла','стояло'], answer:'стоял'},
+    {label:'Бандероль (прибыть)', options:['прибыл','прибыла','прибыло'], answer:'прибыла'},
+    {label:'Щупальце (извиваться)', options:['извивался','извивалась','извивалось'], answer:'извивалось'}
+  ];
+
+  const repairList = document.getElementById('repairList');
+
+  function buildRepairs() {
+    repairList.innerHTML='';
+    repairs.forEach((r,i) => {
+      const row = document.createElement('div');
+      row.className='repair';
+      const label = document.createElement('label');
+      label.htmlFor='repair-' + i;
+      label.textContent=r.label;
+      const select = document.createElement('select');
+      select.id='repair-' + i;
+      select.dataset.answer=r.answer;
+      select.innerHTML='<option value="">Выберите форму</option>' + r.options.map(o => '<option value="' + o + '">' + o + '</option>').join('');
+      row.append(label,select);
+      repairList.appendChild(row);
+    });
+    const st=document.getElementById('status2');
+    st.className='status';
+    st.textContent='Восстановите все строки синтезатора.';
+  }
+
+  document.getElementById('check2').addEventListener('click', () => {
+    const selects=[...repairList.querySelectorAll('select')];
+    const complete=selects.every(s=>s.value);
+    const ok=complete && selects.every(s=>s.value===s.dataset.answer);
+    const st=document.getElementById('status2');
+    if(!complete){
+      st.className='status bad';
+      st.textContent='Не все строки восстановлены. Заполните синтезатор полностью.';
+      return;
+    }
+    if(!ok){
+      st.className='status bad';
+      st.textContent='Синтезатор всё ещё работает неверно. Где-то нарушено согласование. Найдите ошибку и попробуйте снова.';
+      return;
+    }
+    st.className='status good';
+    st.textContent='Синтезатор восстановлен.';
+    completedModules.add(2);
+    updateLabScene(2);
+    setTimeout(()=>show('capsule2',3),450);
+  });
+  document.getElementById('reset2').addEventListener('click', buildRepairs);
+
+  const scans = [
+    {w:'картофель', initial:'f', answer:'m'},
+    {w:'молодёжь', initial:'f', answer:'f'},
+    {w:'повидло', initial:'m', answer:'n'},
+    {w:'рояль', initial:'m', answer:'m'},
+    {w:'мышь', initial:'n', answer:'f'},
+    {w:'полотенце', initial:'n', answer:'n'}
+  ];
+  const labels={m:'мужской',f:'женский',n:'средний'};
+  const scanList=document.getElementById('scanList');
+
+  function buildScans(){
+    scanList.innerHTML='';
+    scans.forEach((s,i)=>{
+      const row=document.createElement('div');
+      row.className='scan-row';
+      const left=document.createElement('div');
+      left.innerHTML='<strong>' + s.w + '</strong><div class="hint">Текущее показание сканера</div>';
+      const select=document.createElement('select');
+      select.id='scan-'+i;
+      select.dataset.answer=s.answer;
+      ['m','f','n'].forEach(g=>{
+        const opt=document.createElement('option');
+        opt.value=g; opt.textContent=labels[g];
+        if(g===s.initial) opt.selected=true;
+        select.appendChild(opt);
+      });
+      row.append(left,select);
+      scanList.appendChild(row);
+    });
+    const st=document.getElementById('status3');
+    st.className='status';
+    st.textContent='Исправьте результаты диагностики.';
+  }
+
+  document.getElementById('check3').addEventListener('click',()=>{
+    const selects=[...scanList.querySelectorAll('select')];
+    const ok=selects.every(s=>s.value===s.dataset.answer);
+    const st=document.getElementById('status3');
+    if(!ok){
+      st.className='status bad';
+      st.textContent='Диагностика всё ещё содержит ошибку. Система не указывает строку — проверьте все показания.';
+      return;
+    }
+    st.className='status good';
+    st.textContent='Диагностический сканер восстановлен.';
+    completedModules.add(3);
+    updateLabScene(3);
+    setTimeout(()=>show('capsule3',4),450);
+  });
+  document.getElementById('reset3').addEventListener('click',buildScans);
+
+  document.getElementById('to2').addEventListener('click',()=>show('module2',2));
+  document.getElementById('to3').addEventListener('click',()=>show('module3',3));
+  document.getElementById('toFinal').addEventListener('click',()=>show('final',4));
+
+  document.getElementById('unlock').addEventListener('click',()=>{
+    const m=document.getElementById('final-m').value;
+    const f=document.getElementById('final-f').value;
+    const n=document.getElementById('final-n').value;
+    const st=document.getElementById('statusFinal');
+    if(!m || !f || !n){
+      st.className='status bad';
+      st.textContent='Нужно установить все три капсулы.';
+      return;
+    }
+    if(new Set([m,f,n]).size<3){
+      st.className='status bad';
+      st.textContent='Каждую капсулу можно использовать только один раз.';
+      return;
+    }
+    if(m==='путь' && f==='мышь' && n==='повидло'){
+      st.className='status good';
+      st.textContent='Конфигурация принята. Выход разблокирован.';
+      setTimeout(()=>show('success',4),450);
+    }else{
+      st.className='status bad';
+      st.textContent='Кодовая конфигурация неверна. Проверьте род слов во всех трёх капсулах.';
+    }
+  });
+
+  document.getElementById('resetFinal').addEventListener('click',()=>{
+    ['final-m','final-f','final-n'].forEach(id=>document.getElementById(id).value='');
+    const st=document.getElementById('statusFinal');
+    st.className='status';
+    st.textContent='Терминал ждёт конфигурацию из трёх капсул.';
+  });
+
+  document.getElementById('restart').addEventListener('click',()=>{
+    completedModules.clear();
+    buildWords();
+    buildRepairs();
+    buildScans();
+    ['final-m','final-f','final-n'].forEach(id=>document.getElementById(id).value='');
+    const st=document.getElementById('statusFinal');
+    st.className='status';
+    st.textContent='Терминал ждёт конфигурацию из трёх капсул.';
+    show('start',1);
+  });
+
+  buildWords();
+  buildRepairs();
+  buildScans();
+  updateLabScene(1);
+})();
+</script>
+</body>
+</html>
